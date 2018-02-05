@@ -36,6 +36,7 @@ namespace Fitbit.Api.Portable
         Task<WaterLog> LogWaterAsync(DateTime date, WaterLog log);
         Task DeleteWaterLogAsync(long logId);
         Task<List<ApiSubscription>> GetSubscriptionsAsync();
+        Task<List<ApiSubscription>> GetSubscriptionsAsync(APICollectionType apiCollectionType);
         Task<ApiSubscription> AddSubscriptionAsync(APICollectionType apiCollectionType, string uniqueSubscriptionId, string subscriberId = default(string));
         Task DeleteSubscriptionAsync(APICollectionType collection, string uniqueSubscriptionId, string subscriberId = null);
         Task<ActivityLog> LogActivityAsync(ActivityLog model);

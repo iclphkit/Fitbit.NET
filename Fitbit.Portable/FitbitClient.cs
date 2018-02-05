@@ -857,6 +857,22 @@ namespace Fitbit.Api.Portable
         }
 
         /// <summary>
+        /// Gets a list of the current subscriptions for a specific collection for the current logged in user
+        /// </summary>
+        /// <param name="apiCollectionType"></param>
+        /// <returns></returns>
+        public async Task<List<ApiSubscription>> GetSubscriptionsAsync(APICollectionType apiCollectionType)
+        {
+            string path = FormatKey(apiCollectionType, Constants.Formatting.TrailingSlash);
+            string apiCall = FitbitClientHelperExtensions.ToFullUrl("/1/user/-/{1}apiSubscriptions.json", args: new object[] { path });
+            HttpResponseMessage response = await HttpClient.GetAsync(apiCall);
+            await HandleResponse(response);
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var serializer = new JsonDotNetSerializer { RootProperty = "apiSubscriptions" };
+            return serializer.Deserialize<List<ApiSubscription>>(responseBody);
+        }
+
+        /// <summary>
         /// Add subscription
         /// </summary>
         /// <param name="apiCollectionType"></param>
