@@ -40,7 +40,8 @@ namespace Fitbit.Api.Portable.OAuth2
                     {
                         var clonedRequest = await response.Result.RequestMessage.CloneAsync();
                         clonedRequest.Headers.Add(CUSTOM_HEADER, CUSTOM_HEADER);
-                        return  await Client.HttpClient.SendAsync(clonedRequest, cancellationToken);
+                        clonedRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Client.AccessToken.Token);
+                        return await Client.HttpClient.SendAsync(clonedRequest, cancellationToken);
                     }
                     else if (response.Result.RequestMessage.Headers.Contains(CUSTOM_HEADER))
                     {
