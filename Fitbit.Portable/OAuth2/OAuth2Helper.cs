@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -74,6 +75,26 @@ namespace Fitbit.Api.Portable.OAuth2
         public static readonly string FitbitOauthPostUrl = "https://api.fitbit.com/oauth2/token";
 
 
+        public async Task RevokeAccessTokenAsync(string token)
+        {
+            HttpClient httpClient = new HttpClient();
+
+            var postUri = new Uri(new Uri(OAuth2Helper.FitbitApiBaseUrl), OAuth2Helper.OAuthBase + "/revoke");
+
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("token", token)
+            });
+
+
+            string clientIdConcatSecret = OAuth2Helper.Base64Encode(ClientId + ":" + ClientSecret);
+
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", clientIdConcatSecret);
+
+            HttpResponseMessage response = await httpClient.PostAsync(postUri, content);
+            await HandleResponse(response);
+        }
+        
         public static OAuth2AccessToken ParseAccessTokenResponse(string responseString)
         {
             // assumption is the errors json will return in usual format eg. errors array
@@ -88,6 +109,32 @@ namespace Fitbit.Api.Portable.OAuth2
 
             var deserializer = new JsonDotNetSerializer();
             return deserializer.Deserialize<OAuth2AccessToken>(responseString);
+        }
+
+        /// <summary>
+        /// General error checking of the response before specific processing is done.
+        /// </summary>
+        /// <param name="response"></param>
+        private async Task HandleResponse(HttpResponseMessage response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                // assumption is error response from fitbit in the 4xx range  
+                var errors = new JsonDotNetSerializer().ParseErrors(await response.Content.ReadAsStringAsync());
+
+                // request exception parsing
+                switch (response.StatusCode)
+                {
+                    case HttpStatusCode.BadRequest:
+                    case HttpStatusCode.Unauthorized:
+                    case HttpStatusCode.Forbidden:
+                    case HttpStatusCode.NotFound:
+                        throw new FitbitRequestException(response, errors);
+                }
+
+                // if we've got here then something unexpected has occured
+                throw new FitbitException($"An error has occured. Please see error list for details - {response.StatusCode}", errors);
+            }
         }
 
         /// <summary>
